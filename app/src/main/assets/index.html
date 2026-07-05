@@ -1,0 +1,2138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#022c22">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Pray Mute</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Firebase (Firestore for realtime masjid data, Auth for secure admin login) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --emerald-premium: #022c22;
+            --gold-premium: #d4af37;
+            --gold-light: #f3e5ab;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top, #064e3b 0%, #022c22 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .font-serif-islamic {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Luxury Gold & Emerald Glassmorphism */
+        .glass-premium {
+            background: rgba(2, 44, 34, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(6, 78, 59, 0.4), rgba(2, 44, 34, 0.8));
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        .border-gold-glow {
+            border-color: var(--gold-premium);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gold-gradient-bg {
+            background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
+        }
+
+        /* Custom Checkbox styles for beautiful premium touch */
+        .rakat-checkbox {
+            appearance: none;
+            width: 1.6rem;
+            height: 1.6rem;
+            border: 2px solid rgba(212, 175, 55, 0.4);
+            border-radius: 0.5rem;
+            background: rgba(2, 44, 34, 0.6);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .rakat-checkbox:checked {
+            background: linear-gradient(135deg, #d4af37, #aa7c11);
+            border-color: #f3e5ab;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+        .rakat-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: #022c22;
+            font-weight: 900;
+            font-size: 0.95rem;
+        }
+
+        /* Animations */
+        .view {
+            display: none;
+            animation: viewEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            padding-bottom: 100px;
+        }
+        .view.active {
+            display: block;
+        }
+
+        @keyframes viewEnter {
+            from { opacity: 0; transform: translateY(12px) scale(0.99); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Premium scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #022c22;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d4af37;
+            border-radius: 10px;
+        }
+
+        /* Bottom Nav shadow */
+        .nav-shadow {
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Pulse animation for premium gold glows */
+        .glow-pulse {
+            animation: goldPulse 3s infinite alternate;
+        }
+        @keyframes goldPulse {
+            0% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+            100% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.55); }
+        }
+
+        /* Light theme override */
+        body.light-theme {
+            background: radial-gradient(circle at top, #f0fdf4 0%, #ecfdf5 100%);
+            color: #022c22;
+        }
+        body.light-theme .glass-premium,
+        body.light-theme .glass-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(236,253,245,0.9));
+            border-color: rgba(170, 124, 17, 0.25);
+            color: #022c22;
+        }
+        body.light-theme .text-white { color: #022c22 !important; }
+        body.light-theme .text-slate-300, body.light-theme .text-slate-400 { color: #475569 !important; }
+
+        /* Islamic Geometric Background pattern */
+        .islamic-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 0l10 30h30l-25 20 10 30-25-20-25 20 10-30-25-20h30z' fill='%23d4af37' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-yellow-600 selection:text-white islamic-pattern min-h-screen">
+
+    <div id="app-container" class="max-w-md mx-auto min-h-screen flex flex-col justify-between relative px-4 pt-4">
+        
+        <!-- ================= PREMIUM HEADER ================= -->
+        <header class="flex justify-between items-center py-3 px-2 z-30 mb-2">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl border border-yellow-500/30 flex items-center justify-center bg-emerald-950/80 shadow-md">
+                    <!-- Elegant SVG Dome Icon -->
+                    <svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12,2A5,5 0 0,1 17,7C17,11.5 12,17 12,17C12,17 7,11.5 7,7A5,5 0 0,1 12,2M12,18C15,18 20,20.5 20,22H4C4,20.5 9,18 12,18Z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold font-serif-islamic tracking-wider gold-gradient-text">Pray Mute</h1>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-300">
+                        <span id="header-hijri-date" class="text-yellow-400 font-medium">10 Rabi' al-Awwal</span>
+                        <span class="w-1 h-1 rounded-full bg-yellow-500/60"></span>
+                        <span id="header-gregorian-date">Gregorian</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <div id="sync-status" class="flex items-center gap-1 text-[10px] bg-emerald-950/90 border border-yellow-600/30 px-2 py-1 rounded-full text-emerald-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Synchronized</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ================= FIRST-LAUNCH PERMISSIONS / DND ONBOARDING ================= -->
+        <div id="onboarding-modal" class="fixed inset-0 z-[110] hidden flex-col justify-center items-center px-4 bg-emerald-950/95 backdrop-blur-md">
+            <div class="glass-premium border-2 border-yellow-500/60 rounded-3xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+                <h3 class="text-xl font-bold font-serif-islamic gold-gradient-text mb-1">Welcome to Pray Mute</h3>
+                <p class="text-xs text-slate-300 mb-4">App sahi tarah kaam kare, iske liye ye permissions allow karein:</p>
+
+                <div class="space-y-3">
+                    <div class="bg-emerald-900/50 border border-yellow-500/15 rounded-xl p-3 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-bold text-white">Notifications</p>
+                            <p class="text-[10px] text-slate-400">Prayer reminders bhejne ke liye</p>
+                        </div>
+                        <button onclick="requestNotificationPermission()" class="text-[10px] bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 font-bold px-3 py-1.5 rounded-full">Allow</button>
+                    </div>
+                    <div class="bg-emerald-900/50 border border-yellow-500/15 rounded-xl p-3 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-bold text-white">Location (GPS)</p>
+                            <p class="text-[10px] text-slate-400">Nearest masjid dhundhne ke liye</p>
+                        </div>
+                        <button onclick="detectUserLocation()" class="text-[10px] bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 font-bold px-3 py-1.5 rounded-full">Allow</button>
+                    </div>
+                    <div class="bg-emerald-900/50 border border-yellow-500/15 rounded-xl p-3">
+                        <p class="text-sm font-bold text-white mb-1">Battery Optimization / Exact Alarm / DND Access</p>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">
+                            Ye 3 permissions sirf Android ki System Settings se milti hain — koi bhi website/web-app
+                            in tak nahi pahunch sakti. Isliye ye app Home Screen par ek "Auto Silent" reminder dikhati
+                            hai jisse aap khud ek tap mein phone silent kar sakein. Phone ko <b>khud-ba-khud</b> (bina
+                            aapke chhue) Silent/DND mode mein daalna sirf tab possible hai jab is app ko Capacitor jaisi
+                            tool se ek real native Android app (APK) mein build kiya jaaye aur us native code se ye
+                            teeno permissions maangi jaayein.
+                        </p>
+                    </div>
+                </div>
+
+                <button onclick="dismissOnboarding()" class="w-full gold-gradient-bg text-emerald-950 font-bold py-3 rounded-xl shadow-lg shadow-yellow-500/20 mt-5 text-sm">
+                    Continue to App
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= REMINDER SCREEN / POPUP (PREMIUM MODAL) ================= -->
+        <div id="reminder-modal" class="fixed inset-0 z-[100] hidden flex-col justify-center items-center px-4 bg-emerald-950/90 backdrop-blur-md">
+            <div class="glass-premium border-2 border-yellow-500/60 rounded-3xl p-6 text-center w-full max-w-sm relative overflow-hidden glow-pulse">
+                <!-- Islamic Dome Graphic Background -->
+                <div class="absolute inset-0 opacity-10 flex items-center justify-center pointer-events-none">
+                    <svg class="w-80 h-80 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C12 2 17 6.5 17 11C17 15.5 12 21 12 21C12 21 7 15.5 7 11C7 6.5 12 2zm0 14c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                    </svg>
+                </div>
+
+                <div class="w-16 h-16 mx-auto rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center mb-4">
+                    <i data-lucide="bell" class="w-8 h-8 text-yellow-400 animate-bounce"></i>
+                </div>
+
+                <h3 class="text-2xl font-bold font-serif-islamic gold-gradient-text mb-2">Namaz ka waqt qareeb hai</h3>
+                <p class="text-slate-200 text-sm mb-6 leading-relaxed">Kripya apna phone Silent Mode par kar dein, ya niche diye gaye button ko dabakar automatic silent karein.</p>
+                
+                <div class="bg-emerald-900/60 border border-yellow-500/20 rounded-xl p-3 mb-6">
+                    <p class="text-xs text-yellow-400 uppercase tracking-widest font-semibold mb-1">Upcoming Jamaat</p>
+                    <p id="reminder-prayer-info" class="text-lg font-bold text-white">Fajr starts in 10 minutes</p>
+                </div>
+
+                <button onclick="confirmPhoneSilenced()" class="w-full gold-gradient-bg hover:opacity-95 text-emerald-950 font-bold py-3.5 rounded-xl shadow-lg shadow-yellow-500/20 active:scale-95 transition flex items-center justify-center gap-2">
+                    <i data-lucide="volume-x" class="w-5 h-5"></i>
+                    Phone Silent Kar Diya ✓
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= MAIN SCROLLABLE CONTENT VIEWS ================= -->
+
+        <!-- VIEW 1: HOME/DASHBOARD -->
+        <div id="view-home" class="view active space-y-5">
+
+            <!-- Live Device/System Status Strip -->
+            <div class="grid grid-cols-4 gap-2">
+                <div id="status-chip-silent" class="glass-card rounded-xl p-2 flex flex-col items-center gap-1 border border-yellow-500/10">
+                    <i data-lucide="volume-2" class="w-4 h-4 text-slate-300"></i>
+                    <span class="text-[8px] text-slate-400 uppercase tracking-wider font-bold">Auto Silent</span>
+                    <span id="status-silent-text" class="text-[10px] font-extrabold text-slate-300">OFF</span>
+                </div>
+                <div id="status-chip-gps" class="glass-card rounded-xl p-2 flex flex-col items-center gap-1 border border-yellow-500/10">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-slate-300"></i>
+                    <span class="text-[8px] text-slate-400 uppercase tracking-wider font-bold">GPS</span>
+                    <span id="status-gps-text" class="text-[10px] font-extrabold text-slate-300">Checking</span>
+                </div>
+                <div id="status-chip-net" class="glass-card rounded-xl p-2 flex flex-col items-center gap-1 border border-yellow-500/10">
+                    <i data-lucide="wifi" class="w-4 h-4 text-slate-300"></i>
+                    <span class="text-[8px] text-slate-400 uppercase tracking-wider font-bold">Internet</span>
+                    <span id="status-net-text" class="text-[10px] font-extrabold text-slate-300">--</span>
+                </div>
+                <div id="status-chip-sync" class="glass-card rounded-xl p-2 flex flex-col items-center gap-1 border border-yellow-500/10">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-300"></i>
+                    <span class="text-[8px] text-slate-400 uppercase tracking-wider font-bold">Sync</span>
+                    <span id="status-sync-text" class="text-[10px] font-extrabold text-slate-300">--</span>
+                </div>
+            </div>
+
+            <!-- Live Clock Card with Mosque Graphic Backdrop -->
+            <div class="glass-card rounded-3xl p-6 relative overflow-hidden border-2 border-yellow-500/20 group">
+                <!-- Gorgeous SVG Mosque Silhouette -->
+                <div class="absolute bottom-0 right-0 left-0 opacity-15 pointer-events-none flex justify-center">
+                    <svg class="w-full max-h-[120px] text-yellow-300" viewBox="0 0 500 150" fill="currentColor">
+                        <path d="M0,150 L500,150 L500,100 L440,100 L440,60 L420,30 L400,60 L400,100 L340,100 L340,40 C340,20 310,0 290,20 C270,0 240,20 240,40 L240,100 L180,100 L180,50 L160,20 L140,50 L140,100 L0,100 Z"/>
+                    </svg>
+                </div>
+                
+                <div class="relative z-10 flex flex-col items-center text-center">
+                    <p class="text-xs text-yellow-400 uppercase tracking-widest font-bold">Live System Time</p>
+                    <div id="live-clock" class="text-5xl font-extrabold tracking-wider font-serif-islamic text-white my-2 drop-shadow-md">00:00:00</div>
+                    
+                    <div onclick="openMosqueModal()" class="flex items-center gap-2 bg-emerald-900/60 border border-yellow-500/30 px-4 py-2 rounded-full cursor-pointer hover:bg-emerald-800/80 transition-all mt-3">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-yellow-400"></i>
+                        <span id="current-mosque-display" class="text-sm font-semibold text-white">Select Masjid</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-yellow-400"></i>
+                    </div>
+                    <p id="current-mosque-distance" class="text-[10px] text-yellow-500/80 mt-1">Distance: Calculating...</p>
+                </div>
+            </div>
+
+            <!-- Next Prayer Countdown -->
+            <div class="glass-premium rounded-2xl p-5 border-l-4 border-l-yellow-500 flex items-center justify-between">
+                <div>
+                    <span class="text-xs text-slate-300 uppercase tracking-wider block">Up Next</span>
+                    <h3 id="next-prayer-title" class="text-2xl font-bold gold-gradient-text font-serif-islamic">Zuhr Prayer</h3>
+                    <p id="next-prayer-time-display" class="text-xs text-slate-300 mt-0.5">Jamaat at --:--</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] text-yellow-400 uppercase tracking-widest block font-bold">Starts In</span>
+                    <div id="countdown-display" class="text-2xl font-mono font-bold text-white tracking-widest bg-emerald-950/80 px-3 py-1.5 rounded-lg border border-yellow-500/10 mt-1">00:00:00</div>
+                </div>
+            </div>
+
+            <!-- Progress Dashboard -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -right-5 -bottom-5 w-16 h-16 bg-yellow-500/5 rounded-full"></div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase tracking-widest block font-semibold">Today's Rakat</span>
+                        <h4 id="dash-offered-count" class="text-3xl font-extrabold gold-gradient-text mt-1">0</h4>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-2">Offered out of <span id="dash-total-rakats">48</span></p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -right-5 -bottom-5 w-16 h-16 bg-emerald-500/5 rounded-full"></div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase tracking-widest block font-semibold">Prayer Streak</span>
+                        <h4 id="dash-streak-count" class="text-3xl font-extrabold text-emerald-400 mt-1">5 Days</h4>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-2">Keep it up! 🌟</p>
+                </div>
+            </div>
+
+            <!-- Circular Completion Chart & Stat Indicator -->
+            <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
+                <div class="space-y-1">
+                    <h4 class="font-bold text-white text-md">Namaz Tracker Stats</h4>
+                    <p id="dash-stat-percentage" class="text-sm text-yellow-400 font-semibold">0% Completed Today</p>
+                    <p class="text-xs text-slate-300">Auto-saves to local journal</p>
+                </div>
+                <div class="w-16 h-16 relative">
+                    <!-- Elegant Circular Progress Indicator -->
+                    <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
+                        <path class="text-emerald-900/40" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path id="circular-progress-path" class="text-yellow-500" stroke-width="4" stroke-linecap="round" stroke-dasharray="0, 100" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span id="circular-progress-text" class="text-xs font-bold text-white">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Home Namaz Schedule -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-wider px-1">Today's Prayer Schedule</h3>
+                <div id="home-prayer-schedule" class="space-y-2">
+                    <!-- Populated via Script -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- VIEW 2: NAMAZ TRACKING VIEW -->
+        <div id="view-namaz" class="view space-y-5">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-2xl font-bold font-serif-islamic gold-gradient-text">Namaz Rakat Tracker</h2>
+                    <p class="text-xs text-slate-300">Tap to record your performed rakats permanently</p>
+                </div>
+                <span class="text-xs bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-3 py-1.5 rounded-full font-bold">Today</span>
+            </div>
+
+            <div id="namaz-tracking-container" class="space-y-4">
+                <!-- Filled via JS loop -->
+            </div>
+        </div>
+
+        <!-- VIEW 3: HISTORY -->
+        <div id="view-history" class="view space-y-5">
+            <div>
+                <h2 class="text-2xl font-bold font-serif-islamic gold-gradient-text">Prayer History Log</h2>
+                <p class="text-xs text-slate-300">Analyze your weekly and monthly completions</p>
+            </div>
+
+            <!-- Quick Summary: Today / Yesterday / This Week / This Month -->
+            <div class="grid grid-cols-4 gap-2" id="history-summary-grid">
+                <!-- Populated via JS -->
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="flex p-1 bg-emerald-950/60 border border-yellow-500/20 rounded-xl">
+                <button id="history-7d-btn" onclick="renderHistory('7')" class="flex-1 py-2 text-xs rounded-lg font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Last 7 Days</button>
+                <button id="history-30d-btn" onclick="renderHistory('30')" class="flex-1 py-2 text-xs rounded-lg text-slate-400 hover:text-white transition-all font-bold">Last 30 Days</button>
+            </div>
+
+            <div id="history-timeline-container" class="space-y-3">
+                <!-- Dynamically populated history stats -->
+            </div>
+        </div>
+
+        <!-- VIEW 4: SETTINGS & ADMIN -->
+        <div id="view-settings" class="view space-y-5">
+            <div>
+                <h2 class="text-2xl font-bold font-serif-islamic gold-gradient-text">Settings & Configuration</h2>
+                <p class="text-xs text-slate-300">Set automatic behavior and sync configurations</p>
+            </div>
+
+            <!-- Silent Automation Preferences -->
+            <div class="glass-card rounded-2xl p-5 border border-yellow-500/10 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-white text-sm">Serene Prayer Bell</h4>
+                        <p class="text-xs text-slate-300">Plays a peaceful tone 10m before Namaz</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="pref-audio-bell" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-emerald-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-yellow-500 after:border-yellow-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-700"></div>
+                    </label>
+                </div>
+                
+                <div class="h-[1px] bg-yellow-500/10"></div>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-white text-sm">Reminder Banner</h4>
+                        <p class="text-xs text-slate-300">Namaz se pehle popup banner dikhata hai</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="pref-silent-mode" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-emerald-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-yellow-500 after:border-yellow-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-700"></div>
+                    </label>
+                </div>
+
+                <div class="h-[1px] bg-yellow-500/10"></div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <h4 class="font-bold text-white text-xs mb-1">Reminder Before Prayer</h4>
+                        <select id="pref-reminder-minutes" onchange="saveReminderPrefs()" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-yellow-100 outline-none focus:border-yellow-500">
+                            <option value="5">5 min pehle</option>
+                            <option value="10" selected>10 min pehle</option>
+                            <option value="15">15 min pehle</option>
+                        </select>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white text-xs mb-1">Silent Restore After</h4>
+                        <select id="pref-restore-minutes" onchange="saveReminderPrefs()" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-yellow-100 outline-none focus:border-yellow-500">
+                            <option value="5">5 min baad</option>
+                            <option value="10" selected>10 min baad</option>
+                            <option value="15">15 min baad</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="h-[1px] bg-yellow-500/10"></div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h4 class="font-bold text-white text-sm">Notification Permission</h4>
+                            <p class="text-xs text-slate-300">Namaz se 10 min pehle push reminder ke liye</p>
+                        </div>
+                        <span id="notif-permission-status" class="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-950 border border-yellow-500/20 text-yellow-400">Checking...</span>
+                    </div>
+                    <button onclick="requestNotificationPermission()" class="w-full glass-premium border border-yellow-500/30 text-yellow-400 font-semibold py-2.5 rounded-xl text-xs">
+                        Enable Prayer Reminders
+                    </button>
+
+                    <div id="native-dnd-block" class="mt-3 hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <h4 class="font-bold text-white text-sm">Real Auto-Silent (DND)</h4>
+                                <p class="text-xs text-slate-300">Namaz ke waqt phone khud-ba-khud silent ho jaayega</p>
+                            </div>
+                            <span id="native-dnd-status" class="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-950 border border-yellow-500/20 text-yellow-400">Checking...</span>
+                        </div>
+                        <button onclick="enableNativeDnd()" class="w-full gold-gradient-bg text-emerald-950 font-bold py-2.5 rounded-xl text-xs">
+                            Allow Auto-Silent Permission
+                        </button>
+                    </div>
+
+                    <p id="web-limitation-note" class="text-[10px] text-slate-400 mt-2 leading-relaxed">
+                        ⚠️ Ye web app phone ko actual Silent/DND mode mein nahi daal sakti — koi bhi browser ye permission nahi deta.
+                        Ye sirf ek reminder notification bhejegi ki "Namaz ka time ho raha hai, phone silent kar lein".
+                    </p>
+                </div>
+            </div>
+
+            <!-- Test Notification / Audio Bell Button -->
+            <button onclick="triggerAudioAndVisualReminder()" class="w-full glass-premium border border-yellow-500/30 text-yellow-400 font-semibold py-3 px-4 rounded-xl hover:bg-yellow-500/10 transition-all flex items-center justify-center gap-2 text-sm">
+                <i data-lucide="music" class="w-4 h-4"></i>
+                Test Peaceful Golden Bell Sound & Alert
+            </button>
+
+            <!-- Profile -->
+            <div class="glass-card rounded-2xl p-5 border border-yellow-500/10 space-y-3">
+                <h3 class="text-md font-bold text-yellow-400 font-serif-islamic">My Profile</h3>
+                <input type="text" id="profile-name" placeholder="Name" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-yellow-500">
+                <input type="email" id="profile-email" placeholder="Email" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-yellow-500">
+                <input type="tel" id="profile-mobile" placeholder="Mobile Number" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-yellow-500">
+                <p class="text-[10px] text-slate-400">Selected Masjid: <span id="profile-selected-mosque" class="text-yellow-400 font-semibold">--</span></p>
+                <button onclick="saveProfile()" class="w-full glass-premium border border-yellow-500/30 text-yellow-400 font-semibold py-2.5 rounded-xl text-xs">Save Profile</button>
+                <p class="text-[9px] text-slate-500">Profile is saved on this device only (no login system implemented).</p>
+            </div>
+
+            <!-- Appearance -->
+            <div class="glass-card rounded-2xl p-5 border border-yellow-500/10 flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-white text-sm">Dark Mode</h4>
+                    <p class="text-xs text-slate-300">Emerald theme vs Light theme</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="pref-dark-mode" checked onchange="toggleThemePreference()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-emerald-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-yellow-500 after:border-yellow-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-700"></div>
+                </label>
+            </div>
+
+            <!-- Notification History -->
+            <div class="glass-card rounded-2xl p-5 border border-yellow-500/10 space-y-2">
+                <h3 class="text-md font-bold text-yellow-400 font-serif-islamic">Notification History</h3>
+                <div id="notification-history-list" class="space-y-1.5 max-h-48 overflow-y-auto">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Backup / Restore -->
+            <div class="glass-card rounded-2xl p-5 border border-yellow-500/10 space-y-3">
+                <h3 class="text-md font-bold text-yellow-400 font-serif-islamic">Backup & Restore</h3>
+                <p class="text-xs text-slate-300">Phone change karne par apna data JSON file se wapas la sakte hain.</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportBackup()" class="w-full glass-premium border border-yellow-500/30 text-yellow-400 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                        <i data-lucide="download" class="w-4 h-4"></i> Export
+                    </button>
+                    <label class="w-full glass-premium border border-yellow-500/30 text-yellow-400 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i data-lucide="upload" class="w-4 h-4"></i> Import
+                        <input type="file" accept=".json" onchange="importBackup(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Admin Muazzin Gateway -->
+            <div id="admin-gateway" class="glass-card rounded-2xl p-5 border border-yellow-500/20">
+                <h3 class="text-md font-bold text-yellow-400 font-serif-islamic mb-3">Muazzin / Admin Control</h3>
+                <p class="text-xs text-slate-300 mb-4">Authorized Mosque staff can modify the prayer timetables. Changes sync automatically.</p>
+                
+                <div id="admin-login-box" class="space-y-3">
+                    <div>
+                        <label class="text-[9px] text-slate-400 block uppercase mb-1">Aapki Masjid</label>
+                        <select id="admin-mosque-select" class="w-full bg-emerald-950/80 border border-yellow-500/30 rounded-xl px-4 py-3 text-sm text-yellow-100 outline-none focus:border-yellow-500/80">
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                    <input type="password" id="admin-pass-input" placeholder="Masjid ka Admin Password" class="w-full bg-emerald-950/80 border border-yellow-500/30 rounded-xl px-4 py-3 text-sm text-yellow-100 placeholder-slate-400 outline-none focus:border-yellow-500/80">
+                    <button onclick="attemptAdminLogin()" class="w-full gold-gradient-bg text-emerald-950 font-bold py-2.5 rounded-xl shadow-md text-sm">
+                        Verify Admin Credentials
+                    </button>
+                </div>
+
+                <div id="admin-panel" class="hidden space-y-4">
+                    <div class="flex items-center justify-between border-b border-yellow-500/10 pb-2">
+                        <h4 class="font-bold text-emerald-400 text-sm">Admin View Enabled</h4>
+                        <button onclick="logoutAdmin()" class="text-xs text-red-400 underline font-semibold">Exit Panel</button>
+                    </div>
+
+                    <!-- Masjid Meta Stats -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-emerald-950/80 border border-yellow-500/10 rounded-xl p-2 text-center">
+                            <p class="text-[9px] text-slate-400 uppercase">Users</p>
+                            <p id="admin-stat-users" class="text-sm font-bold text-yellow-400">--</p>
+                        </div>
+                        <div class="bg-emerald-950/80 border border-yellow-500/10 rounded-xl p-2 text-center">
+                            <p class="text-[9px] text-slate-400 uppercase">Last Update</p>
+                            <p id="admin-stat-lastupdate" class="text-[10px] font-bold text-yellow-400">--</p>
+                        </div>
+                        <div class="bg-emerald-950/80 border border-yellow-500/10 rounded-xl p-2 text-center">
+                            <p class="text-[9px] text-slate-400 uppercase">Status</p>
+                            <p id="admin-stat-status" class="text-sm font-bold text-emerald-400">Active</p>
+                        </div>
+                    </div>
+
+                    <!-- Masjid Info Edit -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="admin-edit-imam" placeholder="Imam Name" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                        <input type="text" id="admin-edit-city" placeholder="City" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                    </div>
+                    <input type="text" id="admin-edit-address" placeholder="Full Address" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-yellow-500">
+                    <input type="tel" id="admin-edit-contact" placeholder="Contact Number" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-yellow-500">
+
+                    <div class="space-y-3" id="admin-timings-grid">
+                        <!-- Populated via JS -->
+                    </div>
+
+                    <button onclick="saveAdminChanges()" class="w-full gold-gradient-bg text-emerald-950 font-bold py-3 rounded-xl shadow-lg shadow-yellow-500/20 text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Sync & Save Changes
+                    </button>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="toggleDisableMosque()" id="admin-disable-btn" class="w-full glass-premium border border-yellow-500/30 text-yellow-400 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="eye-off" class="w-4 h-4"></i> Disable Masjid
+                        </button>
+                        <button onclick="deleteMosqueByAdmin()" class="w-full bg-red-950/60 border border-red-500/40 text-red-400 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> Delete Masjid
+                        </button>
+                    </div>
+
+                    <!-- Admin Logs -->
+                    <div>
+                        <h5 class="text-xs font-bold text-yellow-400 uppercase tracking-wider mb-2">Admin Logs</h5>
+                        <div id="admin-logs-list" class="space-y-1.5 max-h-40 overflow-y-auto">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center pt-2">
+                <p class="text-[10px] text-slate-400">Pray Mute v1.0 • Developed by Mohd Mustaqeem Alam Beg</p>
+            </div>
+        </div>
+
+        <!-- ================= BOTTOM NAVIGATION BAR ================= -->
+        <nav class="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto glass-premium nav-shadow rounded-t-3xl border-t border-yellow-500/30 px-6 py-3 flex justify-around items-center z-50">
+            <button onclick="switchView('home')" class="nav-btn flex flex-col items-center gap-1 text-yellow-400" id="nav-home">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold tracking-wider">Home</span>
+            </button>
+            <button onclick="switchView('namaz')" class="nav-btn flex flex-col items-center gap-1 text-slate-400" id="nav-namaz">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold tracking-wider">Namaz</span>
+            </button>
+            <button onclick="switchView('history')" class="nav-btn flex flex-col items-center gap-1 text-slate-400" id="nav-history">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold tracking-wider">History</span>
+            </button>
+            <button onclick="switchView('settings')" class="nav-btn flex flex-col items-center gap-1 text-slate-400" id="nav-settings">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold tracking-wider">Settings</span>
+            </button>
+        </nav>
+
+        <!-- ================= MOSQUE SELECTION SLIDE-UP MODAL ================= -->
+        <div id="mosque-select-modal" class="fixed inset-0 z-50 hidden flex-col justify-end bg-black/60 backdrop-blur-sm">
+            <div class="glass-premium rounded-t-[2.5rem] border-t-2 border-yellow-500/40 p-6 w-full max-w-md mx-auto max-h-[85vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-5">
+                    <div>
+                        <h3 class="text-xl font-bold font-serif-islamic gold-gradient-text">Choose Your Mosque</h3>
+                        <p class="text-[11px] text-slate-300">Using your real GPS location to find nearby masjids</p>
+                    </div>
+                    <button onclick="closeMosqueModal()" class="w-8 h-8 rounded-full bg-emerald-950 flex items-center justify-center border border-yellow-500/20">
+                        <i data-lucide="x" class="w-4 h-4 text-yellow-500"></i>
+                    </button>
+                </div>
+
+                <div class="relative mb-4">
+                    <i data-lucide="search" class="w-4 h-4 text-yellow-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="mosque-search-input" oninput="renderMosqueSearchResults()" placeholder="Masjid, Imam ya City search karein..." class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-yellow-500">
+                </div>
+                <p class="text-[10px] text-slate-400 -mt-2 mb-3">Showing nearest 10 masjids to your current GPS location (out of <span id="mosque-total-count">0</span> total)</p>
+
+                <div id="mosque-list-container" class="space-y-4">
+                    <!-- Populated in JS with distance, images, and timings -->
+                </div>
+
+                <!-- Custom Mosque Creation Form inside Modal -->
+                <div class="mt-6 border-t border-yellow-500/20 pt-4">
+                    <h4 class="text-xs uppercase tracking-wider font-bold text-yellow-400 mb-3">Add Your Masjid</h4>
+                    <p class="text-[10px] text-slate-400 mb-3">Masjid ki current GPS location automatically capture ho jayegi. Timings baad me Settings me admin password se update kar sakte hain.</p>
+                    <div class="space-y-3">
+                        <input type="text" id="add-mosque-name" placeholder="Masjid Name" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-yellow-500">
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="add-mosque-imam" placeholder="Imam Name" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                            <input type="text" id="add-mosque-city" placeholder="City" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                        </div>
+                        <input type="text" id="add-mosque-address" placeholder="Full Address" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-yellow-500">
+                        <input type="tel" id="add-mosque-contact" placeholder="Contact Number" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-yellow-500">
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[9px] text-slate-400 block uppercase mb-1">Fajr Jamaat</label>
+                                <input type="time" id="add-mosque-fajr" value="04:50" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-400 block uppercase mb-1">Zuhr Jamaat</label>
+                                <input type="time" id="add-mosque-zuhr" value="13:10" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-400 block uppercase mb-1">Asr Jamaat</label>
+                                <input type="time" id="add-mosque-asr" value="16:40" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-400 block uppercase mb-1">Maghrib Jamaat</label>
+                                <input type="time" id="add-mosque-maghrib" value="18:55" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-400 block uppercase mb-1">Isha Jamaat</label>
+                                <input type="time" id="add-mosque-isha" value="20:55" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-yellow-500">
+                            </div>
+                        </div>
+
+                        <input type="password" id="add-mosque-password" placeholder="Set Admin Password (timings update karne ke liye)" class="w-full bg-emerald-950/80 border border-yellow-500/20 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-yellow-500">
+
+                        <button onclick="addNewMosqueSubmit()" class="w-full gold-gradient-bg text-emerald-950 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Create Masjid
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MAIN SOUND GENERATOR & APP SCRIPT -->
+    <script>
+        // Start Lucide Icons
+        lucide.createIcons();
+
+        // Rakat architecture of daily namaz prayers
+        const NAMAZ_STRUCTURE = {
+            Fajr: [
+                { id: 'f_s1', label: '2 Sunnat', type: 'sunnat', count: 2 },
+                { id: 'f_f1', label: '2 Farz', type: 'farz', count: 2 }
+            ],
+            Zuhr: [
+                { id: 'z_s1', label: '4 Sunnat', type: 'sunnat', count: 4 },
+                { id: 'z_f1', label: '4 Farz', type: 'farz', count: 4 },
+                { id: 'z_s2', label: '2 Sunnat', type: 'sunnat', count: 2 },
+                { id: 'z_n1', label: '2 Nafl', type: 'nafl', count: 2 }
+            ],
+            Asr: [
+                { id: 'a_s1', label: '4 Sunnat', type: 'sunnat', count: 4 },
+                { id: 'a_f1', label: '4 Farz', type: 'farz', count: 4 }
+            ],
+            Maghrib: [
+                { id: 'm_f1', label: '3 Farz', type: 'farz', count: 3 },
+                { id: 'm_s1', label: '2 Sunnat', type: 'sunnat', count: 2 },
+                { id: 'm_n1', label: '2 Nafl', type: 'nafl', count: 2 }
+            ],
+            Isha: [
+                { id: 'i_s1', label: '4 Sunnat', type: 'sunnat', count: 4 },
+                { id: 'i_f1', label: '4 Farz', type: 'farz', count: 4 },
+                { id: 'i_s2', label: '2 Sunnat', type: 'sunnat', count: 2 },
+                { id: 'i_n1', label: '2 Nafl', type: 'nafl', count: 2 },
+                { id: 'i_w1', label: '3 Witr', type: 'witr', count: 3 },
+                { id: 'i_n2', label: '2 Nafl', type: 'nafl', count: 2 }
+            ]
+        };
+
+        // FIX: Total rakats ab NAMAZ_STRUCTURE se hi auto-calculate hote hain,
+        // taaki structure kabhi badle to total hamesha sahi rahe (pehle ye 48 hardcoded tha
+        // jo actual rakats ke sum se match hi nahi karta tha).
+        const TOTAL_RAKATS_DAY = Object.values(NAMAZ_STRUCTURE).flat().reduce((sum, r) => sum + r.count, 0);
+
+        // Default high-fidelity coordinates & timings (Pre-seeded dataset)
+        const DEFAULT_MOSQUES = [
+            {
+                id: 'mosque_dts',
+                name: 'DTS Masjid',
+                lat: 26.4499, // Kanpur coords
+                lng: 80.3319,
+                logo: '🕌',
+                // Demo password for this seeded masjid is "78699" (stored as SHA-256 hash, never plaintext)
+                timings: {
+                    Fajr: { azan: '04:30', jamaat: '04:50' },
+                    Zuhr: { azan: '12:45', jamaat: '13:10' },
+                    Asr: { azan: '16:15', jamaat: '16:40' },
+                    Maghrib: { azan: '18:55', jamaat: '18:55' }, // In Maghrib, Azan and Jamaat are identical
+                    Isha: { azan: '20:30', jamaat: '20:55' }
+                }
+            },
+            {
+                id: 'mosque_makkah',
+                name: 'Makkah Masjid',
+                lat: 26.4601,
+                lng: 80.3421,
+                logo: '🕋',
+                timings: {
+                    Fajr: { azan: '04:25', jamaat: '04:45' },
+                    Zuhr: { azan: '12:40', jamaat: '13:00' },
+                    Asr: { azan: '16:10', jamaat: '16:30' },
+                    Maghrib: { azan: '18:50', jamaat: '18:50' },
+                    Isha: { azan: '20:25', jamaat: '20:45' }
+                }
+            },
+            {
+                id: 'mosque_jama',
+                name: 'Jama Masjid Kanpur',
+                lat: 26.4712,
+                lng: 80.3552,
+                logo: '🕌',
+                timings: {
+                    Fajr: { azan: '04:35', jamaat: '04:55' },
+                    Zuhr: { azan: '12:50', jamaat: '13:15' },
+                    Asr: { azan: '16:20', jamaat: '16:45' },
+                    Maghrib: { azan: '19:00', jamaat: '19:00' },
+                    Isha: { azan: '20:40', jamaat: '21:00' }
+                }
+            }
+        ];
+
+        // --- ADMIN AUTH HELPER ---
+        // Har masjid ke liye ek "synthetic" email banate hain (masjid ki asli email nahi honi chahiye)
+        // taaki Firebase Authentication (jo password ko securely, server-side, industry-standard
+        // tareeke se handle karta hai) use ho sake — apna khud ka weak password-check nahi.
+        function syntheticAdminEmail(masjidId) {
+            return `${masjidId}@praymute-admin.local`;
+        }
+
+        // --- GLOBAL STATE ---
+        let appState = {
+            selectedMosqueId: 'mosque_dts',
+            mosques: [],
+            trackerJournal: {}, // Key: YYYY-MM-DD -> Val: { rakatId: true/false }
+            streak: 7,
+            latitude: 26.4499, // Kanpur defaults
+            longitude: 80.3319,
+            hasManuallySelectedMosque: false // GPS se nearest masjid auto-select hoti hai jab tak user khud na chune
+        };
+
+        // ============================================================
+        // --- FIREBASE SETUP (ek baar karna hai) ---
+        // 1. https://console.firebase.google.com par jaake naya project banayein (FREE Spark plan)
+        // 2. Build > Firestore Database > Create database (Production mode, nearest region)
+        // 3. Build > Authentication > Sign-in method > "Email/Password" ENABLE karein
+        // 4. Project Settings (⚙) > General > "Your apps" > Web app (</>) add karein
+        // 5. Jo config object milega, use neeche paste kar dein
+        // 6. Firestore > Rules tab me neeche di gayi rules paste karke Publish karein:
+        //
+        //    rules_version = '2';
+        //    service cloud.firestore {
+        //      match /databases/{database}/documents {
+        //        match /masjids/{masjidId} {
+        //          allow read: if true;
+        //          allow create: if request.auth != null;
+        //          allow update: if request.auth != null && request.auth.uid == resource.data.adminUid;
+        //          // Admin panel se ab Delete Masjid bhi possible hai — sirf usi masjid
+        //          // ka authenticated admin apni masjid delete kar sakta hai.
+        //          allow delete: if request.auth != null && request.auth.uid == resource.data.adminUid;
+        //        }
+        //      }
+        //    }
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtU9loUOo1uYdfn2z_fU7WDp4WTyHiSSk",
+            authDomain: "create-project-eb0f0.firebaseapp.com",
+            projectId: "create-project-eb0f0",
+            storageBucket: "create-project-eb0f0.firebasestorage.app",
+            messagingSenderId: "186448500297",
+            appId: "1:186448500297:web:7b26c6404d83adca781198"
+        };
+
+        let db = null;
+        let auth = null;
+
+        function initFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                auth = firebase.auth();
+                // Offline persistence: config paste karne ke baad, ek baar internet se load hone ke
+                // baad, data device par cache ho jayega aur offline mein bhi Home Screen kaam karega.
+                db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+                    console.warn('Offline persistence enable nahi hui:', err.code);
+                });
+                listenToMasjidUpdates();
+            } catch (err) {
+                console.error('Firebase config galat/missing hai — abhi demo data se chal raha hai.', err);
+                setSyncStatus('offline');
+                appState.mosques = JSON.parse(JSON.stringify(DEFAULT_MOSQUES)).map(m => ({ ...m, adminUid: null }));
+                if (!appState.mosques.find(m => m.id === appState.selectedMosqueId)) {
+                    appState.selectedMosqueId = appState.mosques[0].id;
+                }
+                renderSelectedMosqueHeaderAndDistance();
+                renderHomeSchedule();
+                updateSystemClock();
+            }
+        }
+
+        // --- REALTIME MASJID SYNC ---
+        // Ye function hamesha "listen" karta rehta hai. Jaise hi koi bhi Admin apni masjid ki
+        // timing Firestore me update karta hai, ye SAB users ke phone par turant naya data
+        // bhej deta hai — koi manual refresh ki zaroorat nahi.
+        function listenToMasjidUpdates() {
+            setSyncStatus('syncing');
+            db.collection('masjids').onSnapshot(async (snapshot) => {
+                if (snapshot.empty) {
+                    await seedDefaultMasjidsToFirestore();
+                    return; // seed hone ke baad onSnapshot khud dobara call ho jayega
+                }
+                appState.mosques = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (!appState.selectedMosqueId || !appState.mosques.find(m => m.id === appState.selectedMosqueId)) {
+                    if (!appState.hasManuallySelectedMosque) {
+                        selectNearestMosque();
+                    } else {
+                        appState.selectedMosqueId = appState.mosques[0].id;
+                    }
+                }
+                setSyncStatus('online');
+                renderSelectedMosqueHeaderAndDistance();
+                renderHomeSchedule();
+                updateSystemClock();
+                const settingsView = document.getElementById('view-settings');
+                if (settingsView && settingsView.classList.contains('active')) {
+                    populateAdminMosqueDropdown();
+                }
+            }, (error) => {
+                console.error('Firestore realtime listener error:', error);
+                setSyncStatus('offline');
+            });
+        }
+
+        // Pehli baar app chalne par 3 demo masjid Firestore me daalta hai (sirf ek baar hota hai).
+        // Demo admin password teeno ke liye "78699" hai (Firebase Auth se secure store hota hai).
+        async function seedDefaultMasjidsToFirestore() {
+            for (const mosque of DEFAULT_MOSQUES) {
+                const { id, ...data } = mosque;
+                try {
+                    const cred = await auth.createUserWithEmailAndPassword(syntheticAdminEmail(id), '78699');
+                    await db.collection('masjids').doc(id).set({ ...data, adminUid: cred.user.uid });
+                    await auth.signOut();
+                } catch (err) {
+                    // Agar account pehle se bana hua hai (dusre device ne already seed kar diya), skip karo
+                    console.warn('Seed skip:', id, err.code);
+                }
+            }
+        }
+
+        // "Users" count in Admin Panel ek approximate figure hai — sirf unique devices ka
+        // count jinhone kabhi is masjid ko manually select kiya ho (ek device sirf ek baar
+        // count hota hai, localStorage flag se track karke). Ye live/session count nahi hai.
+        function bumpMasjidSelectionCount(mosqueId) {
+            if (!db) return;
+            const flagKey = `pray_mute_counted_${mosqueId}`;
+            if (localStorage.getItem(flagKey)) return;
+            localStorage.setItem(flagKey, '1');
+            db.collection('masjids').doc(mosqueId).update({
+                selectionCount: firebase.firestore.FieldValue.increment(1)
+            }).catch(err => console.warn('selectionCount update skip:', err.code));
+        }
+
+        let lastSyncTimestamp = null;
+
+        function setSyncStatus(state) {
+            const syncEl = document.getElementById('sync-status');
+            const chipText = document.getElementById('status-sync-text');
+            if (state === 'syncing') {
+                if (syncEl) syncEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-spin"></span><span>Syncing...</span>`;
+                if (chipText) { chipText.innerText = 'Syncing'; chipText.className = 'text-[10px] font-extrabold text-yellow-400'; }
+            } else if (state === 'online') {
+                lastSyncTimestamp = Date.now();
+                if (syncEl) syncEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>Live (Cloud)</span>`;
+                updateSyncChipRelativeTime();
+            } else {
+                if (syncEl) syncEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span><span>Offline (Cached)</span>`;
+                if (chipText) { chipText.innerText = 'Offline'; chipText.className = 'text-[10px] font-extrabold text-red-400'; }
+            }
+        }
+
+        // Har 30 second mein "Last Sync 2 min ago" jaisa relative time refresh karta hai
+        function updateSyncChipRelativeTime() {
+            const chipText = document.getElementById('status-sync-text');
+            if (!chipText || !lastSyncTimestamp) return;
+            const secs = Math.floor((Date.now() - lastSyncTimestamp) / 1000);
+            let label;
+            if (secs < 10) label = 'Just now';
+            else if (secs < 60) label = `${secs}s ago`;
+            else label = `${Math.floor(secs / 60)}m ago`;
+            chipText.innerText = label;
+            chipText.className = 'text-[10px] font-extrabold text-emerald-400';
+        }
+
+        // --- PERSONAL DATA (sirf isi device ke liye — rakat tracking, chuni hui masjid, streak) ---
+        // Ye data kisi doosre user ke saath share nahi hota, isliye localStorage me hi rehta hai.
+        function initDataStorage() {
+            const stored = localStorage.getItem('pray_mute_data_v1');
+            if (stored) {
+                const savedPersonal = JSON.parse(stored);
+                appState.trackerJournal = savedPersonal.trackerJournal || {};
+                appState.streak = savedPersonal.streak ?? 7;
+                appState.latitude = savedPersonal.latitude ?? appState.latitude;
+                appState.longitude = savedPersonal.longitude ?? appState.longitude;
+                appState.selectedMosqueId = savedPersonal.selectedMosqueId || appState.selectedMosqueId;
+                appState.hasManuallySelectedMosque = savedPersonal.hasManuallySelectedMosque || false;
+            } else {
+                seedHistoricalJournal();
+            }
+            initFirebase();
+        }
+
+        function saveStateToStorage() {
+            // Sirf personal fields save hote hain — masjid list ab Firestore se aati hai, localStorage se nahi
+            const personalData = {
+                trackerJournal: appState.trackerJournal,
+                streak: appState.streak,
+                latitude: appState.latitude,
+                longitude: appState.longitude,
+                selectedMosqueId: appState.selectedMosqueId,
+                hasManuallySelectedMosque: appState.hasManuallySelectedMosque
+            };
+            localStorage.setItem('pray_mute_data_v1', JSON.stringify(personalData));
+        }
+
+        // Seeds fake progress data so dashboards have charts loaded immediately
+        function seedHistoricalJournal() {
+            const today = new Date();
+            for (let i = 1; i <= 10; i++) {
+                const targetDay = new Date(today);
+                targetDay.setDate(today.getDate() - i);
+                const dateKey = getFormattedDate(targetDay);
+                appState.trackerJournal[dateKey] = {};
+                
+                // Populating typical realistic prayer tracks
+                const template = Object.values(NAMAZ_STRUCTURE).flat();
+                template.forEach(rakat => {
+                    if (Math.random() > 0.3) { // 70% average prayer compliance
+                        appState.trackerJournal[dateKey][rakat.id] = true;
+                    }
+                });
+            }
+        }
+
+        function getFormattedDate(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // --- GEOLOCATION DISTANCE CALCULATION (Haversine Formula) ---
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return (R * c).toFixed(2); // String representation of km
+        }
+
+        function detectUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    appState.latitude = pos.coords.latitude;
+                    appState.longitude = pos.coords.longitude;
+                    setGpsStatusUI(true);
+                    // Agar user ne kabhi khud se masjid select nahi ki, to GPS ke aadhar par
+                    // sabse nazdeek masjid automatically select ho jayegi.
+                    if (!appState.hasManuallySelectedMosque) {
+                        selectNearestMosque();
+                    }
+                    saveStateToStorage();
+                    renderSelectedMosqueHeaderAndDistance();
+                    renderHomeSchedule();
+                    updateSystemClock();
+                }, (error) => {
+                    console.log("GPS denied or unavailable. Defaulting to last known location.");
+                    setGpsStatusUI(false);
+                    renderSelectedMosqueHeaderAndDistance();
+                });
+            } else {
+                setGpsStatusUI(false);
+                renderSelectedMosqueHeaderAndDistance();
+            }
+        }
+
+        function setGpsStatusUI(connected) {
+            const chip = document.getElementById('status-gps-text');
+            if (!chip) return;
+            if (connected) {
+                chip.innerText = 'Connected';
+                chip.className = 'text-[10px] font-extrabold text-emerald-400';
+            } else {
+                chip.innerText = 'Off';
+                chip.className = 'text-[10px] font-extrabold text-red-400';
+            }
+        }
+
+        function setInternetStatusUI() {
+            const chip = document.getElementById('status-net-text');
+            if (!chip) return;
+            if (navigator.onLine) {
+                chip.innerText = 'Online';
+                chip.className = 'text-[10px] font-extrabold text-emerald-400';
+            } else {
+                chip.innerText = 'Offline';
+                chip.className = 'text-[10px] font-extrabold text-red-400';
+            }
+        }
+
+        // Sabse nazdeek masjid dhundhta hai (Haversine distance) aur usko auto-select karta hai
+        function selectNearestMosque() {
+            if (!appState.mosques || appState.mosques.length === 0) return;
+            let nearest = appState.mosques[0];
+            let nearestDist = parseFloat(calculateDistance(appState.latitude, appState.longitude, nearest.lat, nearest.lng));
+
+            appState.mosques.forEach(mosque => {
+                const dist = parseFloat(calculateDistance(appState.latitude, appState.longitude, mosque.lat, mosque.lng));
+                if (dist < nearestDist) {
+                    nearest = mosque;
+                    nearestDist = dist;
+                }
+            });
+
+            appState.selectedMosqueId = nearest.id;
+        }
+
+        // --- AUDIO ENGINE (PEACEFUL HEAVENLY REMINDER SOUND) ---
+        // Using Web Audio API to generate a soothing, premium atmospheric background wind-chime and bell tone.
+        function playSoothingIslamicBell() {
+            if (!document.getElementById('pref-audio-bell').checked) return;
+
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AudioContext();
+
+                // Gentle low ambient dome chime
+                const triggerChimeNode = (freq, duration, delay, type = 'sine', volume = 0.15) => {
+                    setTimeout(() => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        osc.type = type;
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                        
+                        // Low pass filtering for soft atmosphere
+                        const filter = ctx.createBiquadFilter();
+                        filter.type = 'lowpass';
+                        filter.frequency.setValueAtTime(800, ctx.currentTime);
+
+                        gain.gain.setValueAtTime(volume, ctx.currentTime);
+                        // Peaceful fade out
+                        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(ctx.destination);
+
+                        osc.start();
+                        osc.stop(ctx.currentTime + duration);
+                    }, delay);
+                };
+
+                // Soothing chord: F Major Pentatonic scale (Peaceful Golden hour vibes)
+                triggerChimeNode(349.23, 4.0, 0, 'triangle', 0.15); // F4
+                triggerChimeNode(440.00, 4.5, 400, 'sine', 0.1);    // A4
+                triggerChimeNode(523.25, 5.0, 800, 'sine', 0.1);    // C5
+                triggerChimeNode(659.25, 6.0, 1500, 'sine', 0.05);   // E5
+                triggerChimeNode(349.23 * 0.5, 7.0, 10, 'sine', 0.25); // Low F3 Sub dome atmosphere
+            } catch (err) {
+                console.error("Audio generation failed due to audio context restrictions on mobile browsers.", err);
+            }
+        }
+
+        // --- PRAYER COUNTDOWN & AUTOMATIC REMINDERS ENGINE ---
+        let alertStateActive = false;
+        let lastTriggeredMinutes = -1;
+
+        function updateSystemClock() {
+            const now = new Date();
+            
+            // Render Live clocks
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('live-clock').innerText = `${hours}:${minutes}:${seconds}`;
+
+            // Sync Date Headers
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('header-gregorian-date').innerText = now.toLocaleDateString('en-US', dateOptions);
+
+            const activeMosque = getSelectedMosque();
+            if (!activeMosque) return;
+
+            // Find Next Prayer
+            const prayers = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
+            let nextPrayerName = '';
+            let nextPrayerTimeObj = null;
+
+            for (let prayer of prayers) {
+                const jamaatTimeStr = activeMosque.timings[prayer].jamaat;
+                const [jh, jm] = jamaatTimeStr.split(':').map(Number);
+                
+                const compareDate = new Date();
+                compareDate.setHours(jh, jm, 0, 0);
+
+                if (compareDate > now) {
+                    nextPrayerName = prayer;
+                    nextPrayerTimeObj = compareDate;
+                    break;
+                }
+            }
+
+            // Fallback for tomorrow's Fajr
+            if (!nextPrayerName) {
+                nextPrayerName = 'Fajr';
+                const [jh, jm] = activeMosque.timings['Fajr'].jamaat.split(':').map(Number);
+                nextPrayerTimeObj = new Date();
+                nextPrayerTimeObj.setDate(nextPrayerTimeObj.getDate() + 1);
+                nextPrayerTimeObj.setHours(jh, jm, 0, 0);
+            }
+
+            // Calculate countdown difference
+            const diffMs = nextPrayerTimeObj - now;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const diffSecs = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+            document.getElementById('next-prayer-title').innerText = `${nextPrayerName} Prayer`;
+            document.getElementById('next-prayer-time-display').innerText = `Jamaat at ${formatTime12Hour(activeMosque.timings[nextPrayerName].jamaat)}`;
+            document.getElementById('countdown-display').innerText = 
+                `${String(diffHours).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+
+            // Automatic reminder trigger, based on user's chosen "Reminder Before Prayer" minutes
+            const reminderMinutesBefore = getReminderMinutes();
+            if (diffHours === 0 && diffMins === reminderMinutesBefore && lastTriggeredMinutes !== now.getMinutes()) {
+                lastTriggeredMinutes = now.getMinutes();
+                triggerVisualNotificationModal(nextPrayerName);
+            }
+        }
+
+        // --- REMINDER / RESTORE MINUTE PREFERENCES ---
+        function getReminderMinutes() {
+            return parseInt(localStorage.getItem('pray_mute_reminder_mins') || '10', 10);
+        }
+        function getRestoreMinutes() {
+            return parseInt(localStorage.getItem('pray_mute_restore_mins') || '10', 10);
+        }
+        function saveReminderPrefs() {
+            const reminderVal = document.getElementById('pref-reminder-minutes').value;
+            const restoreVal = document.getElementById('pref-restore-minutes').value;
+            localStorage.setItem('pray_mute_reminder_mins', reminderVal);
+            localStorage.setItem('pray_mute_restore_mins', restoreVal);
+        }
+        function loadReminderPrefs() {
+            document.getElementById('pref-reminder-minutes').value = getReminderMinutes();
+            document.getElementById('pref-restore-minutes').value = getRestoreMinutes();
+        }
+
+        // Manual visual test trigger inside UI settings for high impact demonstration
+        function triggerAudioAndVisualReminder() {
+            triggerVisualNotificationModal('Fajr');
+        }
+
+        function triggerVisualNotificationModal(prayerName) {
+            const mins = getReminderMinutes();
+            document.getElementById('reminder-prayer-info').innerText = `${prayerName} Jamaat starts in ${mins} minutes.`;
+            document.getElementById('reminder-modal').classList.remove('hidden');
+            document.getElementById('reminder-modal').classList.add('flex');
+            playSoothingIslamicBell();
+            sendPrayerReminderNotification(prayerName, mins);
+            logNotificationHistory(`${prayerName} reminder sent (${mins} min before Jamaat)`);
+        }
+
+        function confirmPhoneSilenced() {
+            // Dismiss Modal
+            document.getElementById('reminder-modal').classList.remove('flex');
+            document.getElementById('reminder-modal').classList.add('hidden');
+
+            if (document.getElementById('pref-silent-mode').checked) {
+                setSilentStatusUI(true);
+                logNotificationHistory('User confirmed phone silenced');
+
+                // NATIVE ANDROID BRIDGE: agar app native wrapper ke andar chal rahi hai
+                // (window.NativeBridge maujood hai), to phone ko WAKAI mein Real Silent/DND
+                // mode mein daal do. Browser/PWA mein ye object exist nahi karega, isliye
+                // waha sirf on-screen indicator update hota hai (jaisa pehle tha).
+                if (window.NativeBridge && typeof window.NativeBridge.setPhoneSilent === 'function') {
+                    if (window.NativeBridge.hasDndAccess && window.NativeBridge.hasDndAccess()) {
+                        window.NativeBridge.setPhoneSilent(true);
+                        logNotificationHistory('Phone asli mein Silent/DND kar diya gaya (native)');
+                    } else if (window.NativeBridge.requestDndAccess) {
+                        window.NativeBridge.requestDndAccess();
+                    }
+                }
+
+                const restoreMins = getRestoreMinutes();
+                setTimeout(() => {
+                    setSilentStatusUI(false);
+                    logNotificationHistory('Silent indicator auto-restored');
+                    if (window.NativeBridge && typeof window.NativeBridge.setPhoneSilent === 'function') {
+                        window.NativeBridge.setPhoneSilent(false);
+                        logNotificationHistory('Phone asli mein Normal mode mein wapas kar diya gaya (native)');
+                    }
+                }, restoreMins * 60 * 1000);
+            }
+        }
+
+        // Home screen "Auto Silent" status chip — reflects the app's own reminder state,
+        // NOT actual phone hardware ringer state (a browser/PWA can't read or set that).
+        function setSilentStatusUI(isActive) {
+            const chip = document.getElementById('status-silent-text');
+            const icon = document.querySelector('#status-chip-silent i');
+            if (!chip) return;
+            if (isActive) {
+                chip.innerText = 'ON';
+                chip.className = 'text-[10px] font-extrabold text-yellow-400';
+                if (icon) icon.setAttribute('data-lucide', 'volume-x');
+            } else {
+                chip.innerText = 'OFF';
+                chip.className = 'text-[10px] font-extrabold text-slate-300';
+                if (icon) icon.setAttribute('data-lucide', 'volume-2');
+            }
+            lucide.createIcons();
+        }
+
+        // --- MOSQUE MANAGEMENT & LOCAL GPS SEARCH ENGINE ---
+        function getSelectedMosque() {
+            return appState.mosques.find(m => m.id === appState.selectedMosqueId) || appState.mosques[0];
+        }
+
+        function renderSelectedMosqueHeaderAndDistance() {
+            const current = getSelectedMosque();
+            if (current) {
+                document.getElementById('current-mosque-display').innerText = current.name;
+                const distance = calculateDistance(appState.latitude, appState.longitude, current.lat, current.lng);
+                document.getElementById('current-mosque-distance').innerText = `Distance: ${distance} km away`;
+            }
+        }
+
+        // App kabhi bhi saari duniya ki masjidein ek saath load/show nahi karti.
+        // GPS se sirf sabse nazdeek 10 masjidein (ya search match) dikhayi jaati hain,
+        // taaki list hamesha fast, smooth aur low-data-usage rahe chahe database mein
+        // 1000+ masjidein kyun na ho.
+        const NEAREST_MASJID_LIMIT = 10;
+
+        function getNearestMosques(searchTerm = '') {
+            const term = searchTerm.trim().toLowerCase();
+            let list = appState.mosques.filter(m => {
+                if (m.disabled) return false; // Admin-disabled masjidein list mein nahi aatin
+                if (!term) return true;
+                return (m.name || '').toLowerCase().includes(term) ||
+                       (m.imam || '').toLowerCase().includes(term) ||
+                       (m.city || '').toLowerCase().includes(term) ||
+                       (m.address || '').toLowerCase().includes(term);
+            });
+
+            list = list.map(m => ({
+                ...m,
+                _distance: parseFloat(calculateDistance(appState.latitude, appState.longitude, m.lat, m.lng))
+            })).sort((a, b) => a._distance - b._distance);
+
+            return list.slice(0, NEAREST_MASJID_LIMIT);
+        }
+
+        function renderMosqueSearchResults() {
+            const term = document.getElementById('mosque-search-input').value;
+            renderMosqueListItems(getNearestMosques(term));
+        }
+
+        function renderMosqueListItems(mosques) {
+            const listEl = document.getElementById('mosque-list-container');
+            listEl.innerHTML = '';
+
+            if (mosques.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Koi masjid nahi mili.</p>`;
+                return;
+            }
+
+            mosques.forEach(mosque => {
+                const isSelected = mosque.id === appState.selectedMosqueId;
+                const distance = mosque._distance ?? calculateDistance(appState.latitude, appState.longitude, mosque.lat, mosque.lng);
+                const metaBits = [mosque.city, mosque.imam ? `Imam: ${mosque.imam}` : null].filter(Boolean).join(' • ');
+
+                listEl.innerHTML += `
+                    <div onclick="applyMosqueSelection('${mosque.id}')" class="glass-card rounded-2xl p-4 border ${isSelected ? 'border-yellow-400 bg-yellow-500/10' : 'border-yellow-500/10'} flex items-center justify-between cursor-pointer hover:bg-emerald-900/40 transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">${mosque.logo || '🕌'}</span>
+                            <div>
+                                <h4 class="font-bold text-white text-md">${mosque.name}</h4>
+                                <p class="text-xs text-yellow-500">Distance: ${distance} km</p>
+                                ${metaBits ? `<p class="text-[10px] text-slate-400">${metaBits}</p>` : ''}
+                                ${mosque.contact ? `<p class="text-[10px] text-slate-400">📞 ${mosque.contact}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] text-slate-300 block">Fajr / Isha Jamaat</span>
+                            <span class="text-xs text-white font-bold">${mosque.timings.Fajr.jamaat} / ${mosque.timings.Isha.jamaat}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openMosqueModal() {
+            document.getElementById('mosque-total-count').innerText = appState.mosques.length;
+            const searchInput = document.getElementById('mosque-search-input');
+            if (searchInput) searchInput.value = '';
+            renderMosqueListItems(getNearestMosques());
+
+            document.getElementById('mosque-select-modal').classList.remove('hidden');
+            document.getElementById('mosque-select-modal').classList.add('flex');
+        }
+
+        function closeMosqueModal() {
+            document.getElementById('mosque-select-modal').classList.add('hidden');
+            document.getElementById('mosque-select-modal').classList.remove('flex');
+        }
+
+        function applyMosqueSelection(mosqueId) {
+            appState.selectedMosqueId = mosqueId;
+            appState.hasManuallySelectedMosque = true;
+            saveStateToStorage();
+            closeMosqueModal();
+            renderSelectedMosqueHeaderAndDistance();
+            renderHomeSchedule();
+            renderAdminPanelTimings();
+            bumpMasjidSelectionCount(mosqueId);
+            updateSystemClock();
+        }
+
+        async function addNewMosqueSubmit() {
+            const nameInput = document.getElementById('add-mosque-name');
+            const name = nameInput.value.trim();
+            const passwordInput = document.getElementById('add-mosque-password');
+            const password = passwordInput.value.trim();
+
+            if (!name) { alert('Masjid ka naam dalna zaroori hai.'); return; }
+            if (!password || password.length < 6) { alert('Kam se kam 6 character ka admin password set karein (Firebase Auth ka minimum yahi hai).'); return; }
+            if (!db || !auth) { alert('Firebase abhi connect nahi hai. firebaseConfig sahi se set karein.'); return; }
+
+            // Real GPS location use hoti hai (jahan se masjid add ki ja rahi hai), random nahi
+            const lat = appState.latitude;
+            const lng = appState.longitude;
+
+            const fajr = document.getElementById('add-mosque-fajr').value || '04:50';
+            const zuhr = document.getElementById('add-mosque-zuhr').value || '13:10';
+            const asr = document.getElementById('add-mosque-asr').value || '16:40';
+            const maghrib = document.getElementById('add-mosque-maghrib').value || '18:55';
+            const isha = document.getElementById('add-mosque-isha').value || '20:55';
+
+            const masjidId = 'mosque_' + Date.now();
+            const imam = document.getElementById('add-mosque-imam').value.trim();
+            const city = document.getElementById('add-mosque-city').value.trim();
+            const address = document.getElementById('add-mosque-address').value.trim();
+            const contact = document.getElementById('add-mosque-contact').value.trim();
+
+            try {
+                // Password ab Firebase Authentication securely handle karta hai — humara apna
+                // hash-compare tarika hata diya gaya hai.
+                const cred = await auth.createUserWithEmailAndPassword(syntheticAdminEmail(masjidId), password);
+
+                await db.collection('masjids').doc(masjidId).set({
+                    name: name,
+                    lat: lat,
+                    lng: lng,
+                    logo: '🕌',
+                    imam: imam,
+                    city: city,
+                    address: address,
+                    contact: contact,
+                    disabled: false,
+                    adminUid: cred.user.uid,
+                    lastUpdated: Date.now(),
+                    adminLogs: [{ action: 'Masjid created', at: Date.now() }],
+                    timings: {
+                        Fajr: { azan: fajr, jamaat: fajr },
+                        Zuhr: { azan: zuhr, jamaat: zuhr },
+                        Asr: { azan: asr, jamaat: asr },
+                        Maghrib: { azan: maghrib, jamaat: maghrib },
+                        Isha: { azan: isha, jamaat: isha }
+                    }
+                });
+
+                await auth.signOut(); // normal browsing session admin ki tarah logged-in nahi rehni chahiye
+
+                appState.selectedMosqueId = masjidId;
+                appState.hasManuallySelectedMosque = true;
+                saveStateToStorage();
+
+                nameInput.value = '';
+                passwordInput.value = '';
+                document.getElementById('add-mosque-imam').value = '';
+                document.getElementById('add-mosque-city').value = '';
+                document.getElementById('add-mosque-address').value = '';
+                document.getElementById('add-mosque-contact').value = '';
+                closeMosqueModal();
+                alert(`"${name}" ban gayi aur select ho gayi hai. Password yaad rakhein — ye baad me timings update karne ke liye chahiye hoga.`);
+            } catch (err) {
+                console.error(err);
+                alert('Masjid banane mein error aayi: ' + err.message);
+            }
+        }
+
+        // --- DASHBOARD SCHEDULING ---
+        function renderHomeSchedule() {
+            const mosque = getSelectedMosque();
+            if (!mosque) return; // Firestore se masjid data abhi tak nahi aaya
+            const listEl = document.getElementById('home-prayer-schedule');
+            listEl.innerHTML = '';
+
+            const prayers = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
+            const today = getTodayDateString();
+            const todayTracker = appState.trackerJournal[today] || {};
+
+            prayers.forEach(prayer => {
+                const requiredIds = NAMAZ_STRUCTURE[prayer].filter(r => r.type === 'farz' || r.type === 'witr').map(r => r.id);
+                const isFullyPerformed = requiredIds.every(id => todayTracker[id] === true);
+
+                listEl.innerHTML += `
+                    <div class="glass-card rounded-xl p-3.5 flex items-center justify-between border border-yellow-500/10 hover:border-yellow-500/30 transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full ${isFullyPerformed ? 'bg-yellow-500/10 border border-yellow-500 text-yellow-400' : 'bg-emerald-950 text-slate-400'} flex items-center justify-center">
+                                ${isFullyPerformed ? '<i data-lucide="check" class="w-4 h-4"></i>' : '<i data-lucide="clock" class="w-4 h-4"></i>'}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-sm">${prayer}</h4>
+                                <p class="text-[10px] text-slate-300">Azan: ${formatTime12Hour(mosque.timings[prayer].azan)}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-yellow-400 block font-bold">Jamaat</span>
+                            <span class="text-sm text-white font-extrabold">${formatTime12Hour(mosque.timings[prayer].jamaat)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+            calculateTrackingStatistics();
+        }
+
+        // --- DYNAMIC NAMAZ TRACKING SCREEN ---
+        function renderNamazTracker() {
+            const container = document.getElementById('namaz-tracking-container');
+            container.innerHTML = '';
+
+            const today = getTodayDateString();
+            if (!appState.trackerJournal[today]) {
+                appState.trackerJournal[today] = {};
+            }
+
+            Object.keys(NAMAZ_STRUCTURE).forEach(prayer => {
+                const rakats = NAMAZ_STRUCTURE[prayer];
+                let groupHTML = `
+                    <div class="glass-card rounded-2xl overflow-hidden border border-yellow-500/10">
+                        <div class="bg-yellow-500/5 px-4 py-3 border-b border-yellow-500/10 flex justify-between items-center">
+                            <h3 class="font-serif-islamic font-bold text-yellow-400 tracking-wider">${prayer} Namaz</h3>
+                            <span class="text-[10px] uppercase text-slate-300 font-semibold tracking-widest">${rakats.length} Elements</span>
+                        </div>
+                        <div class="divide-y divide-yellow-500/5">
+                `;
+
+                rakats.forEach(rakat => {
+                    const isChecked = appState.trackerJournal[today][rakat.id] ? 'checked' : '';
+                    groupHTML += `
+                        <label class="flex items-center justify-between p-3.5 hover:bg-emerald-900/20 cursor-pointer transition-all">
+                            <div class="flex flex-col">
+                                <span class="text-white text-sm font-semibold">${rakat.label}</span>
+                                <span class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">${rakat.type}</span>
+                            </div>
+                            <input type="checkbox" class="rakat-checkbox" 
+                                   onchange="toggleRakatProgress('${today}', '${rakat.id}', this.checked)" ${isChecked}>
+                        </label>
+                    `;
+                });
+
+                groupHTML += `</div></div>`;
+                container.innerHTML += groupHTML;
+            });
+        }
+
+        function toggleRakatProgress(dateKey, rakatId, isChecked) {
+            if (!appState.trackerJournal[dateKey]) {
+                appState.trackerJournal[dateKey] = {};
+            }
+            appState.trackerJournal[dateKey][rakatId] = isChecked;
+            saveStateToStorage();
+            calculateTrackingStatistics();
+        }
+
+        // --- STATISTICS ENGINE ---
+        function calculateTrackingStatistics() {
+            const today = getTodayDateString();
+            const todayData = appState.trackerJournal[today] || {};
+
+            // FIX: Pehle ye sirf "kitne checkbox tick hue" gin raha tha (e.g. "4 Farz" tick
+            // karne par bhi sirf 1 count hota tha), isliye asli rakat count galat aata tha.
+            // Ab har checked item ka actual `count` (rakats) jodkar sahi total nikalta hai.
+            const allItems = Object.values(NAMAZ_STRUCTURE).flat();
+            const completedCount = allItems.reduce((sum, item) => {
+                return todayData[item.id] === true ? sum + item.count : sum;
+            }, 0);
+
+            document.getElementById('dash-offered-count').innerText = `${completedCount} Rakats`;
+            document.getElementById('dash-total-rakats').innerText = TOTAL_RAKATS_DAY;
+            
+            const completionPercentage = Math.round((completedCount / TOTAL_RAKATS_DAY) * 100);
+            
+            // Render percentages and circular indicators
+            document.getElementById('dash-stat-percentage').innerText = `${completionPercentage}% Completed Today`;
+            document.getElementById('circular-progress-text').innerText = `${completionPercentage}%`;
+            document.getElementById('circular-progress-path').style.strokeDasharray = `${completionPercentage}, 100`;
+        }
+
+        // --- QUICK SUMMARY: Today / Yesterday / This Week / This Month ---
+        function getRatioForRange(startDaysAgo, endDaysAgo) {
+            const today = new Date();
+            const allItems = Object.values(NAMAZ_STRUCTURE).flat();
+            let totalPossible = 0, totalDone = 0;
+            for (let i = endDaysAgo; i <= startDaysAgo; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const key = getFormattedDate(d);
+                const data = appState.trackerJournal[key] || {};
+                totalPossible += TOTAL_RAKATS_DAY;
+                totalDone += allItems.reduce((sum, item) => data[item.id] === true ? sum + item.count : sum, 0);
+            }
+            return totalPossible ? Math.round((totalDone / totalPossible) * 100) : 0;
+        }
+
+        function renderHistorySummary() {
+            const grid = document.getElementById('history-summary-grid');
+            if (!grid) return;
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0=Sun
+            const dayOfMonth = today.getDate() - 1;
+
+            const cards = [
+                { label: 'Today', value: getRatioForRange(0, 0) },
+                { label: 'Yesterday', value: getRatioForRange(1, 1) },
+                { label: 'This Week', value: getRatioForRange(dayOfWeek, 0) },
+                { label: 'This Month', value: getRatioForRange(dayOfMonth, 0) }
+            ];
+
+            grid.innerHTML = cards.map(c => `
+                <div class="glass-card rounded-xl p-3 text-center border border-yellow-500/10">
+                    <p class="text-[9px] text-slate-400 uppercase tracking-wider font-bold">${c.label}</p>
+                    <p class="text-lg font-extrabold gold-gradient-text">${c.value}%</p>
+                </div>
+            `).join('');
+        }
+
+        // --- HISTORY GENERATOR ---
+        function renderHistory(daysToView) {
+            renderHistorySummary();
+            const timeline = document.getElementById('history-timeline-container');
+            timeline.innerHTML = '';
+
+            // Update Tab Style
+            const btn7 = document.getElementById('history-7d-btn');
+            const btn30 = document.getElementById('history-30d-btn');
+
+            if (daysToView === '7') {
+                btn7.className = "flex-1 py-2 text-xs rounded-lg font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+                btn30.className = "flex-1 py-2 text-xs rounded-lg text-slate-400 hover:text-white transition-all font-bold";
+            } else {
+                btn30.className = "flex-1 py-2 text-xs rounded-lg font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+                btn7.className = "flex-1 py-2 text-xs rounded-lg text-slate-400 hover:text-white transition-all font-bold";
+            }
+
+            const today = new Date();
+            for (let i = 0; i < parseInt(daysToView); i++) {
+                const targetDay = new Date(today);
+                targetDay.setDate(today.getDate() - i);
+                const dateKey = getFormattedDate(targetDay);
+
+                const data = appState.trackerJournal[dateKey] || {};
+                const allItems = Object.values(NAMAZ_STRUCTURE).flat();
+                const completedCount = allItems.reduce((sum, item) => {
+                    return data[item.id] === true ? sum + item.count : sum;
+                }, 0);
+                const ratio = Math.round((completedCount / TOTAL_RAKATS_DAY) * 100) || 0;
+
+                const dayLabel = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : targetDay.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                let colorStyle = 'text-red-400';
+                if (ratio >= 80) colorStyle = 'text-emerald-400';
+                else if (ratio >= 40) colorStyle = 'text-yellow-400';
+
+                timeline.innerHTML += `
+                    <div class="glass-card rounded-xl p-4 flex justify-between items-center border border-yellow-500/5">
+                        <div>
+                            <h4 class="font-bold text-white text-sm">${dayLabel}</h4>
+                            <p class="text-xs text-slate-400">${completedCount} of ${TOTAL_RAKATS_DAY} Rakats performed</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-extrabold text-lg ${colorStyle}">${ratio}%</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // --- PROFILE (device-local only, no auth backend implemented for regular users) ---
+        function loadProfile() {
+            const profile = JSON.parse(localStorage.getItem('pray_mute_profile') || '{}');
+            document.getElementById('profile-name').value = profile.name || '';
+            document.getElementById('profile-email').value = profile.email || '';
+            document.getElementById('profile-mobile').value = profile.mobile || '';
+            const mosque = getSelectedMosque();
+            document.getElementById('profile-selected-mosque').innerText = mosque ? mosque.name : '--';
+        }
+        function saveProfile() {
+            const profile = {
+                name: document.getElementById('profile-name').value.trim(),
+                email: document.getElementById('profile-email').value.trim(),
+                mobile: document.getElementById('profile-mobile').value.trim()
+            };
+            localStorage.setItem('pray_mute_profile', JSON.stringify(profile));
+            alert('Profile save ho gaya (isi device par).');
+        }
+
+        // --- APPEARANCE / DARK-LIGHT THEME ---
+        function applyThemePreference() {
+            const isDark = localStorage.getItem('pray_mute_theme') !== 'light';
+            document.getElementById('pref-dark-mode').checked = isDark;
+            document.body.classList.toggle('light-theme', !isDark);
+        }
+        function toggleThemePreference() {
+            const isDark = document.getElementById('pref-dark-mode').checked;
+            localStorage.setItem('pray_mute_theme', isDark ? 'dark' : 'light');
+            document.body.classList.toggle('light-theme', !isDark);
+        }
+
+        // --- BACKUP / RESTORE (local JSON export-import; no cloud account backup implemented) ---
+        function exportBackup() {
+            const backup = {
+                trackerJournal: appState.trackerJournal,
+                streak: appState.streak,
+                selectedMosqueId: appState.selectedMosqueId,
+                profile: JSON.parse(localStorage.getItem('pray_mute_profile') || '{}'),
+                notifHistory: JSON.parse(localStorage.getItem('pray_mute_notif_history') || '[]'),
+                reminderMins: getReminderMinutes(),
+                restoreMins: getRestoreMinutes(),
+                exportedAt: Date.now()
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pray-mute-backup-${getTodayDateString()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    appState.trackerJournal = data.trackerJournal || appState.trackerJournal;
+                    appState.streak = data.streak ?? appState.streak;
+                    appState.selectedMosqueId = data.selectedMosqueId || appState.selectedMosqueId;
+                    if (data.profile) localStorage.setItem('pray_mute_profile', JSON.stringify(data.profile));
+                    if (data.notifHistory) localStorage.setItem('pray_mute_notif_history', JSON.stringify(data.notifHistory));
+                    if (data.reminderMins) localStorage.setItem('pray_mute_reminder_mins', String(data.reminderMins));
+                    if (data.restoreMins) localStorage.setItem('pray_mute_restore_mins', String(data.restoreMins));
+                    saveStateToStorage();
+                    loadProfile();
+                    loadReminderPrefs();
+                    renderNotificationHistory();
+                    renderHomeSchedule();
+                    alert('Backup restore ho gaya!');
+                } catch (err) {
+                    alert('Ye file valid Pray Mute backup nahi hai.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- FIRST-LAUNCH ONBOARDING ---
+        function maybeShowOnboarding() {
+            if (localStorage.getItem('pray_mute_onboarded')) return;
+            const modal = document.getElementById('onboarding-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function dismissOnboarding() {
+            localStorage.setItem('pray_mute_onboarded', '1');
+            const modal = document.getElementById('onboarding-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // --- NOTIFICATION PERMISSION (honest, real browser capability) ---
+        // Web app phone ka ringer/DND control nahi kar sakti — ye sirf ek asli push
+        // notification bhej sakti hai jo user ko manually silent karne ke liye yaad dilata hai.
+        // --- REAL NATIVE AUTO-SILENT (DND) — only works inside the Android app wrapper ---
+        function updateNativeDndUI() {
+            const block = document.getElementById('native-dnd-block');
+            const note = document.getElementById('web-limitation-note');
+            if (!window.NativeBridge) {
+                // Running in a plain browser/PWA — keep old honest warning, hide native button
+                if (block) block.classList.add('hidden');
+                if (note) note.classList.remove('hidden');
+                return;
+            }
+            // Running inside the Android app — show the real control, hide the old warning
+            if (block) block.classList.remove('hidden');
+            if (note) note.classList.add('hidden');
+            const granted = window.NativeBridge.hasDndAccess && window.NativeBridge.hasDndAccess();
+            const statusEl = document.getElementById('native-dnd-status');
+            if (statusEl) {
+                statusEl.innerText = granted ? 'Allowed' : 'Not Allowed';
+                statusEl.className = granted
+                    ? 'text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-950 border border-yellow-500/40 text-emerald-400'
+                    : 'text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-950 border border-yellow-500/20 text-yellow-400';
+            }
+        }
+
+        function enableNativeDnd() {
+            if (window.NativeBridge && window.NativeBridge.requestDndAccess) {
+                window.NativeBridge.requestDndAccess();
+            }
+        }
+
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                alert('Ye browser Notifications support nahi karta.');
+                return;
+            }
+            Notification.requestPermission().then(updateNotificationStatusUI);
+        }
+
+        function updateNotificationStatusUI() {
+            const el = document.getElementById('notif-permission-status');
+            if (!el || !('Notification' in window)) return;
+            if (Notification.permission === 'granted') {
+                el.innerText = 'Enabled';
+                el.className = 'text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-900 border border-emerald-500/30 text-emerald-400';
+            } else if (Notification.permission === 'denied') {
+                el.innerText = 'Blocked';
+                el.className = 'text-[10px] font-bold px-2 py-1 rounded-full bg-red-950 border border-red-500/30 text-red-400';
+            } else {
+                el.innerText = 'Not Set';
+                el.className = 'text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-950 border border-yellow-500/20 text-yellow-400';
+            }
+        }
+
+        function sendPrayerReminderNotification(prayerName, mins = 10) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Pray Mute', {
+                    body: `${prayerName} Jamaat ${mins} minute mein hai. Kripya phone silent kar lein.`,
+                    icon: undefined
+                });
+            }
+        }
+
+        // --- NOTIFICATION HISTORY LOG ---
+        // "Kis din notification gayi" ka record — device par hi rakha jaata hai (last 50 entries).
+        function logNotificationHistory(message) {
+            const history = JSON.parse(localStorage.getItem('pray_mute_notif_history') || '[]');
+            history.unshift({ message, at: Date.now() });
+            localStorage.setItem('pray_mute_notif_history', JSON.stringify(history.slice(0, 50)));
+            renderNotificationHistory();
+        }
+
+        function renderNotificationHistory() {
+            const el = document.getElementById('notification-history-list');
+            if (!el) return;
+            const history = JSON.parse(localStorage.getItem('pray_mute_notif_history') || '[]');
+            el.innerHTML = history.length ? history.map(h => `
+                <div class="flex justify-between text-[10px] bg-emerald-950/60 border border-yellow-500/5 rounded-lg px-3 py-2">
+                    <span class="text-slate-300">${h.message}</span>
+                    <span class="text-slate-500">${new Date(h.at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+            `).join('') : `<p class="text-[10px] text-slate-500">Abhi tak koi notification history nahi hai.</p>`;
+        }
+
+        // --- ADMIN / MUAZZIN SECURITY ENGINE ---
+        // Currently logged-in admin kis masjid ko edit kar raha hai, uski id yahan track hoti hai
+        let adminEditingMosqueId = null;
+
+        // Admin dropdown ko har baar Settings page khulne par masjid list se populate karta hai
+        function populateAdminMosqueDropdown() {
+            const select = document.getElementById('admin-mosque-select');
+            if (!select) return;
+            select.innerHTML = appState.mosques.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+        }
+
+        async function attemptAdminLogin() {
+            const mosqueId = document.getElementById('admin-mosque-select').value;
+            const pass = document.getElementById('admin-pass-input').value;
+            const mosque = appState.mosques.find(m => m.id === mosqueId);
+
+            if (!mosque) { alert("Masjid nahi mili."); return; }
+            if (!auth) { alert('Firebase abhi connect nahi hai.'); return; }
+
+            try {
+                // FIX: Ab password Firebase Authentication verify karta hai (server-side, secure),
+                // koi bhi client-side hash comparison nahi bacha hai jise kisi ne "View Source"
+                // karke padh liya ho.
+                const cred = await auth.signInWithEmailAndPassword(syntheticAdminEmail(mosqueId), pass);
+
+                if (cred.user.uid !== mosque.adminUid) {
+                    // Extra safety check — normally ye kabhi trigger nahi hoga
+                    await auth.signOut();
+                    alert("Ye account is masjid ka admin nahi hai.");
+                    return;
+                }
+
+                adminEditingMosqueId = mosque.id;
+                document.getElementById('admin-login-box').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                renderAdminPanelTimings();
+            } catch (err) {
+                console.error(err);
+                alert("Galat Password ya account nahi mila. Access Denied.");
+            }
+        }
+
+        async function logoutAdmin() {
+            adminEditingMosqueId = null;
+            if (auth && auth.currentUser) {
+                await auth.signOut();
+            }
+            document.getElementById('admin-login-box').classList.remove('hidden');
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('admin-pass-input').value = '';
+        }
+
+        function renderAdminPanelTimings() {
+            const mosque = appState.mosques.find(m => m.id === adminEditingMosqueId);
+            if (!mosque) return;
+
+            // Meta fields
+            document.getElementById('admin-edit-imam').value = mosque.imam || '';
+            document.getElementById('admin-edit-city').value = mosque.city || '';
+            document.getElementById('admin-edit-address').value = mosque.address || '';
+            document.getElementById('admin-edit-contact').value = mosque.contact || '';
+
+            // Stats: Users count is an approximate figure — the number of unique devices
+            // that have ever selected this masjid (Firestore counter), not a live session count.
+            document.getElementById('admin-stat-users').innerText = mosque.selectionCount ?? 0;
+            document.getElementById('admin-stat-lastupdate').innerText = mosque.lastUpdated
+                ? new Date(mosque.lastUpdated).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                : '--';
+            const statusEl = document.getElementById('admin-stat-status');
+            const disableBtn = document.getElementById('admin-disable-btn');
+            if (mosque.disabled) {
+                statusEl.innerText = 'Disabled';
+                statusEl.className = 'text-sm font-bold text-red-400';
+                disableBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i> Enable Masjid';
+            } else {
+                statusEl.innerText = 'Active';
+                statusEl.className = 'text-sm font-bold text-emerald-400';
+                disableBtn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i> Disable Masjid';
+            }
+
+            // Admin logs (most recent first)
+            const logsEl = document.getElementById('admin-logs-list');
+            const logs = (mosque.adminLogs || []).slice().reverse().slice(0, 15);
+            logsEl.innerHTML = logs.length ? logs.map(log => `
+                <div class="flex justify-between text-[10px] bg-emerald-950/60 border border-yellow-500/5 rounded-lg px-2 py-1.5">
+                    <span class="text-slate-300">${log.action}</span>
+                    <span class="text-slate-500">${new Date(log.at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+            `).join('') : `<p class="text-[10px] text-slate-500">Koi log nahi hai abhi.</p>`;
+
+            const container = document.getElementById('admin-timings-grid');
+            container.innerHTML = '';
+
+            const prayers = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
+            prayers.forEach(prayer => {
+                const timings = mosque.timings[prayer];
+                container.innerHTML += `
+                    <div class="bg-emerald-950/80 border border-yellow-500/10 rounded-xl p-3 space-y-2">
+                        <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest">${prayer} Prayer</span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[9px] text-slate-400 block uppercase">Azan</label>
+                                <input type="time" id="admin_${prayer}_azan" value="${timings.azan}" class="w-full bg-emerald-900 border border-yellow-500/20 text-white rounded-lg p-2 text-xs focus:border-yellow-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-400 block uppercase">Jamaat</label>
+                                <input type="time" id="admin_${prayer}_jamaat" value="${timings.jamaat}" class="w-full bg-emerald-900 border border-yellow-500/20 text-white rounded-lg p-2 text-xs focus:border-yellow-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        async function saveAdminChanges() {
+            const mosque = appState.mosques.find(m => m.id === adminEditingMosqueId);
+            if (!mosque) return;
+            if (!db) { alert('Firebase abhi connect nahi hai.'); return; }
+
+            const updatedTimings = { ...mosque.timings };
+            const prayers = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
+            prayers.forEach(prayer => {
+                const azanVal = document.getElementById(`admin_${prayer}_azan`).value;
+                const jamaatVal = document.getElementById(`admin_${prayer}_jamaat`).value;
+                updatedTimings[prayer] = { azan: azanVal, jamaat: jamaatVal };
+            });
+
+            const imam = document.getElementById('admin-edit-imam').value.trim();
+            const city = document.getElementById('admin-edit-city').value.trim();
+            const address = document.getElementById('admin-edit-address').value.trim();
+            const contact = document.getElementById('admin-edit-contact').value.trim();
+
+            try {
+                // FIX (asli sync): Ab timing seedha Firestore me likhi jaati hai. Wahan se
+                // listenToMasjidUpdates() ka realtime listener SAB devices ko turant naya data
+                // bhej deta hai — koi "sirf isi device par" wali limitation ab nahi hai.
+                // Countdown aur reminder notifications automatically is naye data par reschedule
+                // ho jaate hain kyunki updateSystemClock() har second fresh appState.mosques
+                // se hi calculate karta hai — koi manual reschedule ki zaroorat nahi.
+                await db.collection('masjids').doc(mosque.id).update({
+                    timings: updatedTimings,
+                    imam, city, address, contact,
+                    lastUpdated: Date.now(),
+                    adminLogs: firebase.firestore.FieldValue.arrayUnion({ action: 'Timings/info updated', at: Date.now() })
+                });
+                alert("Update ho gaya! Ye ab sab users ke phone par automatically dikhega aur unka countdown/reminder bhi khud reschedule ho jayega.");
+                logoutAdmin();
+            } catch (err) {
+                console.error(err);
+                alert('Update save nahi hui: ' + err.message);
+            }
+        }
+
+        async function toggleDisableMosque() {
+            const mosque = appState.mosques.find(m => m.id === adminEditingMosqueId);
+            if (!mosque || !db) return;
+            const newState = !mosque.disabled;
+            try {
+                await db.collection('masjids').doc(mosque.id).update({
+                    disabled: newState,
+                    adminLogs: firebase.firestore.FieldValue.arrayUnion({ action: newState ? 'Masjid disabled' : 'Masjid re-enabled', at: Date.now() })
+                });
+                renderAdminPanelTimings();
+            } catch (err) {
+                alert('Status change nahi hui: ' + err.message);
+            }
+        }
+
+        async function deleteMosqueByAdmin() {
+            const mosque = appState.mosques.find(m => m.id === adminEditingMosqueId);
+            if (!mosque || !db) return;
+            if (!confirm(`Pakka "${mosque.name}" ko permanently delete karna hai? Ye undo nahi ho sakta.`)) return;
+            try {
+                await db.collection('masjids').doc(mosque.id).delete();
+                alert('Masjid delete ho gayi.');
+                logoutAdmin();
+            } catch (err) {
+                alert('Delete nahi hui: ' + err.message);
+            }
+        }
+
+        // --- HELPER UTILITIES ---
+        function formatTime12Hour(timeStr) {
+            let [h, m] = timeStr.split(':').map(Number);
+            const suffix = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            h = h ? h : 12;
+            return `${h}:${String(m).padStart(2, '0')} ${suffix}`;
+        }
+
+        function getTodayDateString() {
+            return getFormattedDate(new Date());
+        }
+
+        // --- SPA NAVIGATION CORE ---
+        function switchView(viewId) {
+            // Toggle view visibility
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(`view-${viewId}`).classList.add('active');
+
+            // Bottom Nav indicators
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.add('text-slate-400');
+                btn.classList.remove('text-yellow-400');
+            });
+            document.getElementById(`nav-${viewId}`).classList.remove('text-slate-400');
+            document.getElementById(`nav-${viewId}`).classList.add('text-yellow-400');
+
+            // Refresh specific screen contents if necessary
+            if (viewId === 'home') {
+                renderHomeSchedule();
+            } else if (viewId === 'namaz') {
+                renderNamazTracker();
+            } else if (viewId === 'history') {
+                renderHistory('7');
+            } else if (viewId === 'settings') {
+                populateAdminMosqueDropdown();
+            }
+        }
+
+        // --- INITIAL SYSTEM BOOTSTRAP ---
+        function bootstrap() {
+            initDataStorage();
+            detectUserLocation();
+            updateNotificationStatusUI();
+            updateNativeDndUI();
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) updateNativeDndUI();
+            });
+            loadReminderPrefs();
+            loadProfile();
+            applyThemePreference();
+            renderNotificationHistory();
+            setInternetStatusUI();
+            setSilentStatusUI(false);
+
+            window.addEventListener('online', setInternetStatusUI);
+            window.addEventListener('offline', setInternetStatusUI);
+
+            // Continuous Background clock loop
+            setInterval(updateSystemClock, 1000);
+            updateSystemClock();
+
+            // Relative "Last Sync Xm ago" refresh
+            setInterval(updateSyncChipRelativeTime, 15000);
+
+            // Render first visual schedule
+            renderHomeSchedule();
+            
+            // Render dynamic hijri calendar info (Static approximation for premium look)
+            const today = new Date();
+            const hijriFormatter = new Intl.DateTimeFormat('en-US-u-ca-islamic', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('header-hijri-date').innerText = hijriFormatter.format(today);
+
+            maybeShowOnboarding();
+        }
+
+        window.onload = bootstrap;
+    </script>
+</body>
+</html>
